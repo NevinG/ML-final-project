@@ -6,7 +6,29 @@ h1 {
   text-align: center;
 }
 
-canvas{
+canvas {
   width: 100%;
   aspect-ratio: 2/1;
+}
+
+#main-container {
+  display: flex;
+}
+
+.container-item {
+  padding: 10px;
+}
+
+.grow {
+  flex: 1;
+}
+
+.input-layer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-layer-card input {
+  width: 50px;
 }
