@@ -24,6 +24,13 @@ const testingAccuracyLabel = document.getElementById("testing-accuracy-label") a
 const trainOneIterationButton = document.getElementById("train-nn-all") as HTMLButtonElement;
 const startTrainingButton = document.getElementById("start-training") as HTMLButtonElement;
 const stopTrainingButton = document.getElementById("stop-training") as HTMLButtonElement;
+const activationFunctionSelect = document.getElementById("activation-function") as HTMLSelectElement;
+const gradientDescentSelect = document.getElementById("gradient-descent") as HTMLSelectElement;
+const lossFunctionSelect = document.getElementById("loss-function") as HTMLSelectElement;
+const regularizationSelect = document.getElementById("regularization") as HTMLSelectElement;
+const regularizationRateInput = document.getElementById("regularization-rate") as HTMLInputElement;
+const useDropoutCheckbox = document.getElementById("use-dropout") as HTMLInputElement;
+const dropoutRateInput = document.getElementById("dropout-rate") as HTMLInputElement;
 //remove elements from dom to act as a variable
 const hiddenLayerDiv = hiddenLayerInputContainer.children[0].cloneNode(true) as HTMLInputElement;
 hiddenLayerInputContainer.removeChild(hiddenLayerInputContainer.children[0]);
@@ -162,6 +169,7 @@ startTrainingButton.onclick = () => {
 
 stopTrainingButton.onclick = () => {
   stopRequested = true;
+  stopTrainingButton.disabled = true;
 }
 
 randomTestInputButton.onclick = () => {
@@ -239,7 +247,14 @@ function renderHiddenLayerInputs(val: number) {
 }
 
 function renderNNFromInputs () {
-  nn = new NN();
+  const activationFunction = ActivationFunction[activationFunctionSelect.value as keyof typeof ActivationFunction];
+  const useSGD = gradientDescentSelect.value === "sgd";
+  const lossFunction = LossFunction[lossFunctionSelect.value as keyof typeof LossFunction];
+  const regularization = Regularization[regularizationSelect.value as keyof typeof Regularization];
+  const regularizationRate = parseFloat(regularizationRateInput.value);
+  const useDropout = useDropoutCheckbox.checked;
+  const dropoutRate = parseFloat(dropoutRateInput.value);
+  nn = new NN(activationFunction, lossFunction, regularization, regularizationRate, useSGD, useDropout, dropoutRate);
   let inputLayerSize = parseInt((inputLayerInput.children[1] as HTMLInputElement).value);
   nn.addInputLayer(inputLayerSize);
   let hiddenLayers = [];
@@ -251,6 +266,11 @@ function renderNNFromInputs () {
   let outputLayerSize = parseInt((outputLayerInput.children[1] as HTMLInputElement).value);
   nn.addOutputLayer(outputLayerSize);
   renderNN(nn);
+
+  // Reset training and testing stats
+  totalTrainingIterationsLabel.innerText = "0";
+  trainingAccuracyLabel.innerText = "0%";
+  testingAccuracyLabel.innerText = "0%";
 }
 
 function renderNN(nn: NN) {
@@ -320,6 +340,16 @@ function createLayers(layer: Perceptron[], x: number, layerWidth: number) {
 }
 
 function renderConnections(layers: { perceptron: Perceptron; x: number; y: number; r: number }[][], inputPixels: {x: number, y: number, value: number}[]) {
+  // Find the maximum absolute weight
+  let maxWeight = 0;
+  for (let i = 0; i < layers.length - 1; i++) {
+    for (let j = 0; j < layers[i].length; j++) {
+      for (let k = 0; k < layers[i + 1].length; k++) {
+        maxWeight = Math.max(maxWeight, Math.abs(layers[i + 1][k].perceptron.weights[j]));
+      }
+    }
+  }
+
   //connections to input
   for (let i = 0; i < inputPixels.length; i++) {
     for (let j = 0; j < layers[0].length; j++) {
@@ -327,7 +357,8 @@ function renderConnections(layers: { perceptron: Perceptron; x: number; y: numbe
         renderConnection(
           { perceptron: null, x: inputPixels[i].x, y: inputPixels[i].y, r: 0 },
           layers[0][j],
-          layers[0][j].perceptron.weights[i] * 4 //so you can see them better
+          layers[0][j].perceptron.weights[i],
+          maxWeight
         );
       }
     }
@@ -337,19 +368,35 @@ function renderConnections(layers: { perceptron: Perceptron; x: number; y: numbe
   for (let i = 0; i < layers.length - 1; i++) {
     for (let j = 0; j < layers[i].length; j++) {
       for (let k = 0; k < layers[i + 1].length; k++) {
-        renderConnection(layers[i][j], layers[i + 1][k], layers[i+1][k].perceptron.weights[j]);
+        renderConnection(layers[i][j], layers[i + 1][k], layers[i + 1][k].perceptron.weights[j], maxWeight);
       }
     }
   }
 }
 
-function renderConnection(perceptronA: { perceptron: Perceptron; x: number; y: number; r: number }, perceptronB: { perceptron: Perceptron; x: number; y: number; r: number }, weight: number) {
+function renderConnection(perceptronA: { perceptron: Perceptron; x: number; y: number; r: number }, perceptronB: { perceptron: Perceptron; x: number; y: number; r: number }, weight: number, maxWeight: number) {
   ctx.beginPath();
   ctx.moveTo(perceptronA.x, perceptronA.y);
   ctx.lineTo(perceptronB.x, perceptronB.y);
-  ctx.lineWidth = Math.max(.01,weight * 5); // Adjust the multiplier as needed for visibility
+  const normalizedWeight = Math.abs(weight) / maxWeight;
+  ctx.lineWidth = Math.max(.01, normalizedWeight * 0.6); // Normalize and set max thickness to 0.6 px
+
+  // Calculate color based on weight
+  let color;
+  if (weight > 0.1) {
+    const greenValue = Math.floor(255 * normalizedWeight);
+    color = `rgba(0, ${greenValue}, 0, ${normalizedWeight})`; // More green for larger positive values with opacity
+  } else if (weight < -0.1) {
+    const redValue = Math.floor(255 * normalizedWeight);
+    color = `rgba(${redValue}, 0, 0, ${normalizedWeight})`; // More red for larger negative values with opacity
+  } else {
+    color = `rgba(128, 128, 128, ${normalizedWeight})`; // Gray for zero weight with opacity
+  }
+  ctx.strokeStyle = color;
+
   ctx.stroke();
   ctx.lineWidth = 1; // Reset to default line width
+  ctx.strokeStyle = 'black'; // Reset to default stroke color
 }
 
 function renderPerceptrons(layers: { perceptron: Perceptron; x: number; y: number; r: number }[][]) {
@@ -401,3 +448,17 @@ function renderPerceptron(
     ctx.fillText(rightLabel, x + r + 10, y);
   }
 }
+
+function updateRegularizationRate() {
+  regularizationRateInput.disabled = regularizationSelect.value === 'NONE';
+}
+
+function updateDropoutRate() {
+  dropoutRateInput.disabled = !useDropoutCheckbox.checked;
+}
+
+regularizationSelect.addEventListener('change', updateRegularizationRate);
+useDropoutCheckbox.addEventListener('change', updateDropoutRate);
+
+updateRegularizationRate();
+updateDropoutRate();

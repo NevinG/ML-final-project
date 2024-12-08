@@ -7,7 +7,7 @@
     <script src="./index.js" defer></script>
   </head>
   <body>
-    <h1>NN and CNN from Scratch</h1>
+    <h1>NN visualization from Scratch</h1>
     <div id="main-container">
       <div class="container-item">
         <h2>Dataset info</h2>
@@ -19,7 +19,7 @@
 
         <!-- Hidden layers -->
         <span><strong>Hidden Layers:</strong></span>
-        <input id="layer-num" type="number" min="1" value="2", max="10">
+        <input id="layer-num" type="number" min="1" value="3" max="10">
         <div style="display:flex">
           <div id="input-layer" class="input-layer-card">
             <span>Input </span>
@@ -28,7 +28,7 @@
           <div id="hidden-layers-config" style="display: flex;">
             <div class="input-layer-card">
               <span>Hidden 1</span>
-              <input type="number" min="1" value="10">
+              <input type="number" min="1" value="16">
             </div>
           </div>
           <div id="output-layer" class="input-layer-card">
@@ -36,6 +36,48 @@
             <input type="number" value="10" disabled>
           </div>
         </div>
+
+        <!-- Activation Function -->
+        <span><strong>Activation Function:</strong></span>
+        <select id="activation-function">
+          <option value="SIGMOID">Sigmoid</option>
+          <option value="RELU">ReLU</option>
+          <option value="SOFTMAX">Softmax</option>
+        </select><br/>
+
+        <!-- Gradient Descent Type -->
+        <span><strong>Gradient Descent:</strong></span>
+        <select id="gradient-descent">
+          <option value="normal">Normal</option>
+          <option value="sgd">Stochastic</option>
+        </select><br/>
+
+        <!-- Loss Function -->
+        <span><strong>Loss Function:</strong></span>
+        <select id="loss-function">
+          <option value="MEAN_SQUARED_ERROR">Mean Squared Error</option>
+          <option value="CROSS_ENTROPY">Cross Entropy</option>
+        </select><br/>
+
+        <!-- Regularization -->
+        <span><strong>Regularization:</strong></span>
+        <select id="regularization">
+          <option value="NONE">None</option>
+          <option value="L1">L1</option>
+          <option value="L2">L2</option>
+        </select><br/>
+
+        <!-- Regularization Rate -->
+        <span><strong>Regularization Rate:</strong></span>
+        <input id="regularization-rate" type="number" min="0" max="1" step="0.01" value="0.01"><br/>
+
+        <!-- Dropout -->
+        <span><strong>Use Dropout:</strong></span>
+        <input id="use-dropout" type="checkbox"><br/>
+
+        <!-- Dropout Rate -->
+        <span><strong>Dropout Rate:</strong></span>
+        <input id="dropout-rate" type="number" min="0" max="1" step="0.01" value="0.5"><br/>
 
         <!--Buttons-->
 
@@ -45,25 +87,25 @@
         <!-- Training Buttons -->
         <h2>Network Training</h2>
         <p><strong>Learning Rate:</strong></p>
-        <input id="learning-rate" type="number" min="0", max="1", value=".01">
+        <input id="learning-rate" type="number" min="0.01" max="1" value="0.1">
 
         <p>Total Training Iterations: <span id="training-iterations-label">0</span></p>
         <p>Training Accuracy: <span id="training-accuracy-label">0%</span></p>
 
-        <button id="randomize-inputs">Random Training Input</button>
-        <button id="train-nn">Train NN</button>
-        <button id="start-training">Start training on training data</button>
-        <button id="stop-training" disabled>Stop training on training data</button>
-        <button id="train-nn-all">Train 1 iteration on training data</button>
+        <button id="randomize-inputs">Random Training Input</button><br/>
+        <button id="train-nn">Train NN on current input</button><br/>
+        <button id="train-nn-all">Train 1 iteration on training data</button><br/>
+        <button id="start-training">Start training</button>
+        <button id="stop-training" disabled>Stop training</button>
 
         <div style="display: none; width: 100%; height: 15px; border: 2px solid black" id="training-progress-container">
-          <div style="width: 0%; height: 11px; background-color: green;" id="training-progress"></div>
+          <div style="width: 0%; height: 10px; background-color: green;" id="training-progress"></div>
         </div>
 
         <!-- Testing Buttons -->
         <h2>Network Testing</h2>
         <p>Testing Accuracy: <span id="testing-accuracy-label">0%</span></p>
-        <button id="random-test-input">Random Test Input</button>
+        <button id="random-test-input">Random Test Input</button><br/>
         <button id="execute-nn">Execute NN</button>
         <button id="execute-nn-all">Execute NN on all testing data</button>
 
