@@ -174,11 +174,12 @@ class NN {
         }, 0);
         return loss + this.regularizationRate * regularization;
     }
-    backpropagate(expected) {
+    backpropagate(expected, actual) {
         // Calculate output layer deltas
         for (let i = 0; i < this.outputs.length; i++) {
             const output = this.outputs[i];
-            output.delta = (expected[i] - output.value) * output.activateDerivative(output.value);
+            const error = expected[i] - actual[i];
+            output.delta = error * output.activateDerivative(output.value);
         }
         // Calculate hidden layer deltas
         for (let i = this.hiddenLayers.length - 1; i >= 0; i--) {
@@ -235,14 +236,18 @@ class NN {
             const randomIndex = Math.floor(Math.random() * inputs.length);
             this.giveInputs([inputs[randomIndex]]);
             this.execute();
-            this.backpropagate([expected[randomIndex]]);
+            const actual = this.outputs.map(perceptron => perceptron.value);
+            const loss = this.calculateLoss([expected[randomIndex]], actual);
+            this.backpropagate([expected[randomIndex]], actual);
             this.updateWeights(learningRate);
         }
         else {
             // Normal Gradient Descent
             this.giveInputs(inputs);
             this.execute();
-            this.backpropagate(expected);
+            const actual = this.outputs.map(perceptron => perceptron.value);
+            const loss = this.calculateLoss(expected, actual);
+            this.backpropagate(expected, actual);
             this.updateWeights(learningRate);
         }
     }
